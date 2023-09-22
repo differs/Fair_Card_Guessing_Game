@@ -8,7 +8,7 @@ members = [
     # "04-tamagotchi-shop/upload",
     # "05-tamagotchi-auto",
     # "06-tamagotchi-army",
-    "vara-better",
+    "vara-bets",
     # "store",
 ]
 
@@ -42,4 +42,4 @@ tokio = { version = "1", features = ["rt-multi-thread"] }
 # tmg4-io = { path = "04-tamagotchi-shop/io" }
 # tmg5-io = { path = "05-tamagotchi-auto/io" }
 # tmg6-io = { path = "06-tamagotchi-army/io" }
-card-io = { path = "vara-better/io"}
+card-io = { path = "vara-bets/io"}
