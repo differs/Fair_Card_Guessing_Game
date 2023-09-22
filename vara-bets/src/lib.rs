@@ -4,7 +4,7 @@
 use gstd::{debug, exec, msg, prelude::*, ActorId};
 use card_io::{CardPlay,Action,Event,Query,Reply,GameStateStruct, GameState};
 
-use core::convert::AsMut;
+// use core::convert::AsMut;
 use data_encoding::BASE64;
 // use once_cell::sync::Lazy;
 
@@ -129,11 +129,11 @@ extern "C" fn handle() {
             // let creator:ActorId = exec
             
             // let encoded_card_arr: String = base64_encoded_cards_array.clone();
-            // 计算[{ActorId : Value},{ActorId : Value},{ActorId : Value},{ActorId : Value} ],按照 Value 排序
+            // [{ActorId : Value},{ActorId : Value},{ActorId : Value},{ActorId : Value} ]
 
-            // 获取 牌序 数组切片中最大数的索引 INDEX_MAX_NUM
+            // INDEX_MAX_NUM
 
-            // 获取 [{ActorId : Value},{ActorId : Value},{ActorId : Value},{ActorId : Value} ]中 索引为 INDEX_MAX_NUM的 键值对的ActorId.
+            // [{ActorId : Value},{ActorId : Value},{ActorId : Value},{ActorId : Value} ] INDEX_MAX_NUM的 ->ActorId.
             let encoded_cards_array = base64_encoded_cards_array.clone();
 
             // decode cards array.
@@ -146,7 +146,6 @@ extern "C" fn handle() {
             // assert!(gamblers, 0)
             assert_ne!(gamblers, 0);
 
-            // 按照投注的先后顺序发牌.
             // let mut (k: u64, v) = state.3.clone();
             let k: usize = (gamblers - 0).try_into().unwrap();
 
@@ -179,11 +178,10 @@ extern "C" fn handle() {
             let owner = ActorId::from_bs58("kGfn1RrSZJkTrNbNjpQbvWNE5Szsr3tsTFtmYExrBHFCPLjPy".to_owned()).expect("msg");
         
             // gstd::msg::so
-            gstd::msg::reply("DistributeRewards Success", 0).expect("DistributeRewards Error");
+            let _ = gstd::msg::reply("DistributeRewards Success", 0).expect("DistributeRewards Error");
             // gstd::msg::send_for_reply(program, payload, value, reply_deposit)
-            gstd::msg::send(owner, "Banker's margin", owner_shares);
-            gstd::msg::send(winner_actorId, "You are the LUCKest one ", winner_shares);  
-            // gstd::msg::re        
+            let _ = gstd::msg::send(owner, "Banker's margin", owner_shares);
+            let _ = gstd::msg::send(winner_actorId, "You are the LUCKest one ", winner_shares);  
 
         }
 
@@ -193,23 +191,6 @@ extern "C" fn handle() {
                 // debug!("GAME_STATE: {:?}", GAME_STATE);
 
             }{
-                // 玩家解密投注金额,并回退混淆金额
-                // debug!("Age: {}", age);
-
-                // 获取玩家发送的金额
-
-                // 获取加密后的数据
-                // let crypted_value_string = state.
-                // 获取加密所用的nonce.
-                // let nonce = state.
-
-                // 调用解密函数. 得出投注金额
-
-                // 存储 [{ActorId : Value},{ActorId : Value},{ActorId : Value},{ActorId : Value} ]
-
-                // 发送 (sum - bet) 到玩家
-                // let sum = state.x
-                // let bet = decrypted...
                 gstd::msg::reply("Refund Success", 0).expect("Betting Error");
 
 
