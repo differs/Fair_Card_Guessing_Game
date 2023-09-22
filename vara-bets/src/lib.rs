@@ -1,9 +1,9 @@
 #![no_std]
 // use ::alloc::collections::BTreeMap;
 // use gstd::prelude::*;
-use gstd::{debug, exec, msg, prelude::*, ActorId, collections::BTreeMap};
+use gstd::{debug, exec, msg, prelude::*, ActorId};
 use card_io::{CardPlay,Action,Event,Query,Reply,GameStateStruct, GameState};
-use core::cmp::max;
+
 use core::convert::AsMut;
 use data_encoding::BASE64;
 // use once_cell::sync::Lazy;
@@ -89,7 +89,7 @@ extern "C" fn handle() {
                     let total_bet_amount = msg::value();
                     let actorId = msg::source();
                     let current_round = state.current_rounds();
-                    let user_bet_amount = total_bet_amount.clone();
+                    let _user_bet_amount = total_bet_amount.clone();
                     let base64_encoded_encrypted_betting_data = encrypted_bet_data.clone();
                     // state.current_round_hash(rounds, base64_encoded_cards_hash.clone());
 
@@ -187,7 +187,7 @@ extern "C" fn handle() {
 
         }
 
-        Action::Refund { base64_encoded_nonce } => {
+        Action::Refund { base64_encoded_nonce: _ } => {
             if unsafe {
                 GAME_STATE == Some(GameStateStruct(GameState::PlayerDecryption))
                 // debug!("GAME_STATE: {:?}", GAME_STATE);
@@ -220,7 +220,7 @@ extern "C" fn handle() {
 
             }
         },
-        Action::GameStop { code, url } => todo!(),
+        Action::GameStop { code: _, url: _ } => todo!(),
 
         Action::WithDraw {  } => {
             
