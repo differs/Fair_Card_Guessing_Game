@@ -29,15 +29,8 @@ extern "C" fn init() {
     // unsafe { STATE = Some(car::default()) };
 
     unsafe { STATE = Some(CardPlay::default());
-            //  GAME_STATE = Some(GameStateStruct(card_io::GameState::DealerProofSubmission));
-            // GAME_STATE = gstd::Some(GameStateStruct(GameState::DealerProofSubmission));
-            GAME_STATE = gstd::Some(GameState::DealerProofSubmission);
-            assert_eq!(GameState::DealerProofSubmission, GAME_STATE.unwrap());
-             
-            //  let init_contract_owner:ActorId = msg::source();
-            //  GAME_STATE = Some()
-            // successed = Some(CardPlay::init_contract_owner(&mut self, msg::source()));
-            // Some()
+            GAME_STATE = gstd::Some(GameState::GameEnd);
+            assert_eq!(GameState::GameEnd, GAME_STATE.unwrap());            
             
      };
 
@@ -56,33 +49,32 @@ extern "C" fn handle() {
         //     gstd::msg::reply(Event::Added { code, url }, 0).expect("failed to reply");
         // }
         Action::GameStart { title } => {
-            // todo
-            // state::game_start(code.clone(), url.clone());
-            state.game_start(title.clone());
-            let rounds = state.current_rounds();
-            // let the_String = String::from("j=,Cggrj33EMn89956004724dcd5a4b7");
-            // let bytes = the_String.as_bytes();
-            // let a:[u8; 32] = [106, 61, 44, 67, 103, 103, 114, 106, 51, 51, 69, 77, 110, 56, 57, 57, 53, 54, 48, 48, 52, 55, 50, 52, 100, 99, 100, 53, 97, 52, 98, 55];
-            // assert_eq!(bytes, a);
+            if unsafe { GAME_STATE } == Some(GameState::GameEnd){
+                state.game_start(title.clone());
+                let rounds = state.current_rounds();
 
-            unsafe { GAME_STATE = Some(GameState::DealerProofSubmission) };
-            // assert_eq!(0, self::GAME_STATE);
-            gstd::msg::reply(Event::GameStarted { rounds, title },0).expect("Got error");
-            // gstd::msg::reply("hello",100000).expect("Got error");
+                unsafe { GAME_STATE = Some(GameState::DealerProofSubmission) };
+                gstd::msg::reply(Event::GameStarted { rounds, title },0).expect("Got error");
+            }
         }
 
         Action::InsertHash { base64_encoded_cards_hash } => {
-            let rounds = state.current_rounds();
-            state.current_round_hash(rounds, base64_encoded_cards_hash.clone());
+            if unsafe { GAME_STATE } == Some(GameState::DealerProofSubmission) {
+                let rounds = state.current_rounds();
+                state.current_round_hash(rounds, base64_encoded_cards_hash.clone());
+    
+                unsafe { 
+                    GAME_STATE = Some(GameState::PlayerBetting);
+                    // debug!("GAME_STATE: {:?}", GAME_STATE);                     
+                };
 
-            unsafe { 
-                GAME_STATE = Some(GameState::PlayerBetting);
-                debug!("GAME_STATE: {:?}", GAME_STATE);                     
-            };
+                gstd::msg::reply(Event::InsertedHash { rounds, base64_encoded_cards_hash }, 0).expect("Instert Hash error");
+
+    
+            }
 
             // let submitted_hash = base64_encoded_cards_hash.clone();
 
-            gstd::msg::reply(Event::InsertedHash { rounds, base64_encoded_cards_hash }, 0).expect("Instert Hash error");
         },
 
         Action::Bet { encrypted_bet_data } => {
@@ -103,92 +95,104 @@ extern "C" fn handle() {
                     state.bet(current_round, actorId, total_bet_amount,base64_encoded_encrypted_betting_data);
                     // gstd::msg::reply("Betting success", 0).expect("Betting Error");
                     gstd::msg::reply(Event::Bet { total_bet_amount, encrypted_bet_data }, 0).expect("Betting Action Error");
+
+                    if state.3.len() >= 5 {
+
+                        unsafe { GAME_STATE = Some(GameState::DealerDecryption) }
+                        
+                    }
                 }
         },
 
-        Action::InsertCards { encoded_cards_sequence } => {
+        Action::InsertCards { encoded_cards_sequence  } => {
             if unsafe {
                 GAME_STATE == Some(GameState::DealerDecryption)
 
             }{
                 // 庄家公开牌序
                 // state.current_round_Cards_array(rounds, card_vec.clone());
-                let actorId = msg::source();
-                let bankerId = msg::source();
+                let actor_id = msg::source();
+                let banker_id = msg::source();
 
-                if actorId == bankerId {
+                if actor_id == banker_id {
                     let current_round = state.current_rounds();
 
                     let current_round_encoded_cards_sequence = encoded_cards_sequence.clone();
 
-                    state.insert_cards(current_round, current_round_encoded_cards_sequence);
+                    state.insert_cards(current_round, actor_id, current_round_encoded_cards_sequence);
 
-                    gstd::msg::reply(Event::InsertedCards { encoded_cards_sequence, rounds: todo!() }, 0).expect("Insert encoded_cards_sequence Got Errors");
+                    gstd::msg::reply(Event::InsertedCards {  current_round, actor_id, encoded_cards_sequence }, 0).expect("Insert encoded_cards_sequence Got Errors");
                 }
 
                 // 
+                unsafe { GAME_STATE = Some(GameState::RewardDistribution) }
             }
         },
 
         Action::DistributeRewards { base64_encoded_cards_array } => {
 
-            // let creator: ActorId = exec::program_id()
-            // let creator:ActorId = exec
+            // assert_eq!(GameState, Some(GameState::RewardDistribution));
+            if unsafe { GAME_STATE } == Some(GameState::RewardDistribution) {
+
+
+                let actor_id = msg::source();
+                let current_round = state.current_rounds();
+
+
+                let encoded_cards_array = base64_encoded_cards_array.clone();
+                state.insert_cards(current_round, actor_id, encoded_cards_array.clone());
+
+
+                // decode cards array.
+                let decoded_cards_arry = BASE64.decode(&encoded_cards_array.as_bytes()).expect("In put card array error.");
+
+                let mut array: [u8; 52] = [0; 52];
+                array.copy_from_slice(&decoded_cards_arry);
+                assert_eq!(array.len(), 52);
+                let gamblers = state.distribute_rewards();
+                // assert!(gamblers, 0)
+                assert_ne!(gamblers, 0);
+
+                // let mut (k: u64, v) = state.3.clone();
+                let k: usize = (gamblers - 0).try_into().unwrap();
+
+
+                let mut max_val = array[0];
+                let mut max_index = k;
             
-            // let encoded_card_arr: String = base64_encoded_cards_array.clone();
-            // [{ActorId : Value},{ActorId : Value},{ActorId : Value},{ActorId : Value} ]
+                for i in 1..k {
+                    if array[i] > max_val {
+                        max_val = array[i];
+                        max_index = i;
+                    }
+                }            
+                assert_ne!(max_index, 0);
 
-            // INDEX_MAX_NUM
+                let card_max_index: u64 = max_index.try_into().unwrap();
 
-            // [{ActorId : Value},{ActorId : Value},{ActorId : Value},{ActorId : Value} ] INDEX_MAX_NUM的 ->ActorId.
-            let encoded_cards_array = base64_encoded_cards_array.clone();
+                let winner_actor_info= state.3.get_key_value(&card_max_index).expect("Got Winner INFO Error");
 
-            // decode cards array.
-            let decoded_cards_arry = BASE64.decode(encoded_cards_array.as_bytes()).expect("In put card array error.");
+                let winner_actor_id: ActorId = winner_actor_info.1.1;
 
-            let mut array: [u8; 52] = [0; 52];
-            array.copy_from_slice(&decoded_cards_arry);
-            assert_eq!(array.len(), 52);
-            let gamblers = state.distribute_rewards();
-            // assert!(gamblers, 0)
-            assert_ne!(gamblers, 0);
+                // let winner_actorId = msg::source();
 
-            // let mut (k: u64, v) = state.3.clone();
-            let k: usize = (gamblers - 0).try_into().unwrap();
+                let balance: u128 = exec::value_available();
 
+                let owner_shares:u128 = balance * 10 / 100;
 
-            let mut max_val = array[0];
-            let mut max_index = k;
-        
-            for i in 1..k {
-                if array[i] > max_val {
-                    max_val = array[i];
-                    max_index = i;
-                }
-            }            
-            assert_ne!(max_index, 0);
+                let winner_shares:u128 = balance * 90 / 100;
 
-            let card_max_index: u64 = max_index.try_into().unwrap();
+                let owner = ActorId::from_bs58("kGfn1RrSZJkTrNbNjpQbvWNE5Szsr3tsTFtmYExrBHFCPLjPy".to_owned()).expect("msg");
+            
+                // gstd::msg::so
+                let _ = gstd::msg::reply("DistributeRewards Success", 0).expect("DistributeRewards Error");
+                // gstd::msg::send_for_reply(program, payload, value, reply_deposit)
+                let _ = gstd::msg::send(owner, "Banker's margin", owner_shares);
+                let _ = gstd::msg::send(winner_actor_id, "You are the LUCKest one ", winner_shares);  
+            }
 
-            let winner_actor_info= state.3.get_key_value(&card_max_index).expect("Got Winner INFO Error");
+            unsafe { GAME_STATE = Some(GameState::GameEnd) }
 
-            let winner_actorId: ActorId = winner_actor_info.1.1;
-
-            // let winner_actorId = msg::source();
-
-            let balance: u128 = exec::value_available();
-
-            let owner_shares:u128 = balance * 10 / 100;
-
-            let winner_shares:u128 = balance * 90 / 100;
-
-            let owner = ActorId::from_bs58("kGfn1RrSZJkTrNbNjpQbvWNE5Szsr3tsTFtmYExrBHFCPLjPy".to_owned()).expect("msg");
-        
-            // gstd::msg::so
-            let _ = gstd::msg::reply("DistributeRewards Success", 0).expect("DistributeRewards Error");
-            // gstd::msg::send_for_reply(program, payload, value, reply_deposit)
-            let _ = gstd::msg::send(owner, "Banker's margin", owner_shares);
-            let _ = gstd::msg::send(winner_actorId, "You are the LUCKest one ", winner_shares);  
 
         }
 
@@ -208,7 +212,7 @@ extern "C" fn handle() {
 
             }
         },
-        Action::GameStop { code: _, url: _ } => todo!(),
+        // Action::GameStop { code: _, url: _ } => todo!(),
 
         Action::WithDraw {  } => {
             
@@ -218,6 +222,7 @@ extern "C" fn handle() {
 
             let _ = gstd::msg::send(msg::source(), "Withdraw Balance.", balance);
         },
+        // Action::GameStop { code, url } => todo!(),
 
         // Action::GameState => todo!(),
     }
@@ -243,17 +248,15 @@ extern "C" fn state() {
         Query::BlockTimestamp => Reply::BlockTimestamp(gstd::exec::block_timestamp()),
         Query::ProgramId => Reply::ProgramId(gstd::exec::program_id()),
         Query::MessageId => Reply::MessageId(gstd::msg::id()),
-        Query::Title() => todo!(),
+        Query::Title() => Reply::Title(state.last_round().1),
         // Query::Last => todo!(),
         Query::Last() => Reply::Last(state.last_round().0, state.last_round().1),
         Query::GameState() => Reply::GameState(unsafe { GAME_STATE.clone() }),
-        // println!("{}","j=,Cggrj33EMn89956004724dcd5a4b7".encode_hex::<String>());
         Query::HashInserted() => Reply::HashInserted(state.inquire_current_card_hash().0, state.inquire_current_card_hash().1),
-        // debug!("Age: {}", age);
-        // debug!(state.Inquire_current_card_hash().1)
         Query::Beted() => todo!(),
-        Query::CardsInserted() => todo!(),
+        Query::CardsInserted() => Reply::CardsInserted(state.4.last_key_value().expect("msg").1.2.clone()),
         Query::DistributedRewards() => todo!(),
+        Query::AllBets() => Reply::AllBets(state.3),
     };
     gstd::msg::reply(reply, 0).expect("Failed to share state");
 

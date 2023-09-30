@@ -10,12 +10,6 @@ use gmeta::{InOut, Metadata};
 
 use data_encoding::BASE64;
 
-// use encoding_rs::*;
-
-// use aes_gcm_siv::{ aead::{Aead, KeyInit, OsRng},Aes256GcmSiv, Nonce // Or `Aes128GcmSiv`
-// };
-
-
 
 #[derive(Clone, Default, Encode, Decode, TypeInfo)]
 pub struct CardPlay (
@@ -23,6 +17,9 @@ pub struct CardPlay (
     pub BTreeMap<u64, gstd::String>,
     pub BTreeMap<u64, String>, // Object.entries {234: "0xdeadbeef..."} => [[234, "0xdeadbeef..."]] Vec<(u64, [u8; 32])>
     pub BTreeMap<u64, (u64, ActorId, u128, u128, String)>,
+
+    // Cards Insert
+    pub BTreeMap<u64, (u64, ActorId, String)>
 );
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Encode, Decode, TypeInfo)]
@@ -34,6 +31,7 @@ pub enum GameState {
     PlayerDecryption,
     DealerDecryption,
     RewardDistribution,
+    GameEnd,
 }
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo,PartialEq)]
@@ -45,7 +43,7 @@ pub enum UserBettingData {
     EncryptedBetData,
 }
 
-#[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq)]
+#[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq, Copy)]
 
 pub struct GameStateStruct(pub GameState);
 
@@ -109,12 +107,6 @@ impl CardPlay {
 
     }
 
-    pub fn game_state() -> (){
-        // let state = ;
-    }
-
-    fn game_stop(&mut self, code: String) {
-    }
 
     pub fn current_round_hash(&mut self, round: u64, base64_encoded_hash: String) {
         if self.2.is_empty() == true{
@@ -190,7 +182,12 @@ impl CardPlay {
         // betting_data  [1000, 9999] 
     }
 
-    pub fn insert_cards(&mut self, round: u64, base64_encoded_cards_sequence: String) {
+    pub fn insert_cards(&mut self, round: u64, actor_id: ActorId, encoded_cards_array: String) {
+
+        let index = self.4.len() + 1;
+
+
+        self.4.insert(index.try_into().unwrap(),(round, actor_id, encoded_cards_array));
     }
 
     pub fn distribute_rewards(&mut self) -> u64{
@@ -206,7 +203,7 @@ impl CardPlay {
 pub enum Action {
     // GameState,
     GameStart { title: String },
-    GameStop { code: String, url: String },
+    // GameStop { code: String, url: String },
     // GameStop { code: String, url: String },
 
     InsertHash { base64_encoded_cards_hash: String },
@@ -228,9 +225,9 @@ pub enum Action {
 pub enum Event {
     // GameState,
     GameStarted { rounds: u64, title: String },
-    GameStoped { code: String, url: String },
+    // GameStoped { code: String, url: String },
     InsertedHash { rounds: u64, base64_encoded_cards_hash: String },
-    InsertedCards { rounds: u64, encoded_cards_sequence: String },
+    InsertedCards { current_round: u64, actor_id: ActorId, encoded_cards_sequence: String },
 
     Bet { total_bet_amount: u128, encrypted_bet_data: String },
     Refund { base64_encoded_nonce: String },
@@ -251,7 +248,8 @@ pub enum Query {
     Title(),
     GameState(),
     HashInserted(),
-    Beted (),
+    Beted(),
+    AllBets(),
     CardsInserted(),
     DistributedRewards(),
     BlockNumber,
@@ -269,7 +267,8 @@ pub enum Reply {
     Title(String),
     GameState(gstd::Option<GameState>),
     HashInserted(u64, String),
-    Beted (u64,u64,u128,String),
+    Beted (u64, ActorId, u128, u128, String),
+    AllBets(BTreeMap<u64, (u64, ActorId, u128, u128, String)>),
     CardsInserted(String),
     DistributedRewards(u64, ActorId, u128),
     Url(Option<String>),
