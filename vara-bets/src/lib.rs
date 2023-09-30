@@ -11,8 +11,10 @@ use data_encoding::BASE64;
 
 
 static mut STATE: Option<CardPlay> = None;
-static mut GAME_STATE: Option<GameStateStruct> = None;
-static ARR_0: [u8; 32] = [0; 32];
+// static mut GAME_STATE: Option<GameStateStruct> = None;
+
+static mut GAME_STATE: Option<GameState> = None;
+// static ARR_0: [u8; 32] = [0; 32];
 // let mut CONTRACT_OWNER: ActorId = None;
 // static CONTRACT_OWNER: Lazy<ActorId> = Lazy::new(|| {
 //     ActorId::from_slice(&ARR_0).expect("Init Contract owner error")
@@ -27,7 +29,11 @@ extern "C" fn init() {
     // unsafe { STATE = Some(car::default()) };
 
     unsafe { STATE = Some(CardPlay::default());
-             GAME_STATE = Some(GameStateStruct(card_io::GameState::DealerDecryption));
+            //  GAME_STATE = Some(GameStateStruct(card_io::GameState::DealerProofSubmission));
+            // GAME_STATE = gstd::Some(GameStateStruct(GameState::DealerProofSubmission));
+            GAME_STATE = gstd::Some(GameState::DealerProofSubmission);
+            assert_eq!(GameState::DealerProofSubmission, GAME_STATE.unwrap());
+             
             //  let init_contract_owner:ActorId = msg::source();
             //  GAME_STATE = Some()
             // successed = Some(CardPlay::init_contract_owner(&mut self, msg::source()));
@@ -59,7 +65,8 @@ extern "C" fn handle() {
             // let a:[u8; 32] = [106, 61, 44, 67, 103, 103, 114, 106, 51, 51, 69, 77, 110, 56, 57, 57, 53, 54, 48, 48, 52, 55, 50, 52, 100, 99, 100, 53, 97, 52, 98, 55];
             // assert_eq!(bytes, a);
 
-            unsafe { GAME_STATE = Some(GameStateStruct(GameState::DealerProofSubmission)) };
+            unsafe { GAME_STATE = Some(GameState::DealerProofSubmission) };
+            // assert_eq!(0, self::GAME_STATE);
             gstd::msg::reply(Event::GameStarted { rounds, title },0).expect("Got error");
             // gstd::msg::reply("hello",100000).expect("Got error");
         }
@@ -69,7 +76,7 @@ extern "C" fn handle() {
             state.current_round_hash(rounds, base64_encoded_cards_hash.clone());
 
             unsafe { 
-                GAME_STATE = Some(GameStateStruct(GameState::PlayerBetting));
+                GAME_STATE = Some(GameState::PlayerBetting);
                 debug!("GAME_STATE: {:?}", GAME_STATE);                     
             };
 
@@ -80,7 +87,7 @@ extern "C" fn handle() {
 
         Action::Bet { encrypted_bet_data } => {
             if unsafe { 
-                GAME_STATE == Some(GameStateStruct(GameState::PlayerBetting))
+                GAME_STATE == Some(GameState::PlayerBetting)
 
                 // debug!("GAME_STATE: {:?}", GAME_STATE);                     
                 }
@@ -101,7 +108,7 @@ extern "C" fn handle() {
 
         Action::InsertCards { encoded_cards_sequence } => {
             if unsafe {
-                GAME_STATE == Some(GameStateStruct(GameState::DealerDecryption))
+                GAME_STATE == Some(GameState::DealerDecryption)
 
             }{
                 // 庄家公开牌序
@@ -187,7 +194,7 @@ extern "C" fn handle() {
 
         Action::Refund { base64_encoded_nonce: _ } => {
             if unsafe {
-                GAME_STATE == Some(GameStateStruct(GameState::PlayerDecryption))
+                GAME_STATE == Some(GameState::PlayerDecryption)
                 // debug!("GAME_STATE: {:?}", GAME_STATE);
 
             }{
