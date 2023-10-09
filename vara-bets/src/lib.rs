@@ -189,9 +189,11 @@ extern "C" fn handle() {
                 // gstd::msg::send_for_reply(program, payload, value, reply_deposit)
                 let _ = gstd::msg::send(owner, "Banker's margin", owner_shares);
                 let _ = gstd::msg::send(winner_actor_id, "You are the LUCKest one ", winner_shares);  
+
+                unsafe { GAME_STATE = Some(GameState::GameEnd) }
+
             }
 
-            unsafe { GAME_STATE = Some(GameState::GameEnd) }
 
 
         }
@@ -204,17 +206,24 @@ extern "C" fn handle() {
             }{
                 gstd::msg::reply("Refund Success", 0).expect("Betting Error");
 
-
-
                 // Test type.
                 // let a = state.inquire_current_card_hash().1;
                 // let b = GameStateStruct(GameState::PlayerDecryption);
+                // "31bbe87933d53b1baaf3d13c02d45482af069d82ff92deee935aabc5f1a691f8"
+                // let hash = hash((ActorId, amount, mixamount))
+                // assert_eq!(hash, "31bbe87933d53b1baaf3d13c02d45482af069d82ff92deee935aabc5f1a691f8")
+
+                // Record actual bet amount
+
+                // Refund mix amount
+
+                // Send inviter shares
 
             }
         },
         // Action::GameStop { code: _, url: _ } => todo!(),
 
-        Action::WithDraw {  } => {
+        Action::WithDraw {} => {
             
             let balance: u128 = exec::value_available();
             let admin: ActorId = ActorId::from_bs58("kGfn1RrSZJkTrNbNjpQbvWNE5Szsr3tsTFtmYExrBHFCPLjPy".to_owned()).expect("Get Admin Address Error.");

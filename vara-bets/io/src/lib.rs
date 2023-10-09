@@ -70,7 +70,6 @@ impl CardPlay {
         }
         else {
             let last:u64 = self.1.len().try_into().unwrap();
-            // return self.1.last_key_value().;
             return last;
         }
     }
@@ -85,12 +84,9 @@ impl CardPlay {
                     return (key.clone(), value.clone());
                 },
                 None => {todo!()},
-            }          
-    
-            // return ;
+            }    
         }
         else {
-            // return ();
             todo!()
         }
     }
