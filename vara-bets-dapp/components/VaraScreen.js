@@ -1,15 +1,16 @@
+// HomeScreen.js
 import React from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
-const VaraScreen = () => {
+const ProfileScreen = () => {
   return (
     <View style={styles.container}>
-      {/* <Text>Vara Screen</Text> */}
+      <Text>Profile Screen</Text>
     </View>
   );
 };
 
-export default VaraScreen;
+export default ProfileScreen;
 
 const styles = StyleSheet.create({
   container: {

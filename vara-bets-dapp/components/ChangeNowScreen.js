@@ -1,16 +1,18 @@
-// HomeScreen.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const ProfileScreen = () => {
+const ChangeNowScreen = () => {
   return (
     <View style={styles.container}>
-      <Text>Profile Screen</Text>
+      <Text>ChangeNow Screen</Text>
+      <Text>
+      Connect to third-party services (such as: ChangeNow) to facilitate users to quickly redeem vara
+      </Text>
     </View>
   );
 };
 
-export default ProfileScreen;
+export default ChangeNowScreen;
 
 const styles = StyleSheet.create({
   container: {

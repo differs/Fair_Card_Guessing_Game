@@ -5,6 +5,9 @@ const GamesScreen = () => {
   return (
     <View style={styles.container}>
       <Text>Games Screen</Text>
+      <Text>
+      A page: used to announce upcoming new games.
+      </Text>
     </View>
   );
 };
