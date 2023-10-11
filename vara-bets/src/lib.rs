@@ -1,18 +1,12 @@
 #![no_std]
-// use ::alloc::collections::BTreeMap;
-// use gstd::prelude::*;
 use gstd::{debug, exec, msg, prelude::*, ActorId};
-use card_io::{CardPlay,Action,Event,Query,Reply,GameStateStruct, GameState};
-
-// use core::convert::AsMut;
+use card_io::{CardPlay,Action,Event,Query,Reply, GameState};
+use sha2::{Sha256, Sha512, Digest, digest::{generic_array::GenericArray, typenum::{UInt, UTerm, bit::{B1, B0}}}};
 use data_encoding::BASE64;
-// use once_cell::sync::Lazy;
 
 
 
 static mut STATE: Option<CardPlay> = None;
-// static mut GAME_STATE: Option<GameStateStruct> = None;
-
 static mut GAME_STATE: Option<GameState> = None;
 // static ARR_0: [u8; 32] = [0; 32];
 // let mut CONTRACT_OWNER: ActorId = None;
@@ -30,7 +24,7 @@ extern "C" fn init() {
 
     unsafe { STATE = Some(CardPlay::default());
             GAME_STATE = gstd::Some(GameState::GameEnd);
-            assert_eq!(GameState::GameEnd, GAME_STATE.unwrap());            
+            assert_eq!(GameState::GameEnd, GAME_STATE.unwrap());           
             
      };
 
@@ -109,7 +103,6 @@ extern "C" fn handle() {
                 GAME_STATE == Some(GameState::DealerDecryption)
 
             }{
-                // 庄家公开牌序
                 // state.current_round_Cards_array(rounds, card_vec.clone());
                 let actor_id = msg::source();
                 let banker_id = msg::source();
@@ -191,34 +184,53 @@ extern "C" fn handle() {
                 let _ = gstd::msg::send(winner_actor_id, "You are the LUCKest one ", winner_shares);  
 
                 unsafe { GAME_STATE = Some(GameState::GameEnd) }
-
             }
-
-
-
         }
 
         Action::Refund { base64_encoded_nonce: _ } => {
             if unsafe {
-                GAME_STATE == Some(GameState::PlayerDecryption)
+                GAME_STATE == Some(GameState::DealerDecryption)
+                // GAME_STATE == Some(GameState::PlayerDecryption)
+
                 // debug!("GAME_STATE: {:?}", GAME_STATE);
 
             }{
                 gstd::msg::reply("Refund Success", 0).expect("Betting Error");
 
-                // Test type.
                 // let a = state.inquire_current_card_hash().1;
                 // let b = GameStateStruct(GameState::PlayerDecryption);
-                // "31bbe87933d53b1baaf3d13c02d45482af069d82ff92deee935aabc5f1a691f8"
-                // let hash = hash((ActorId, amount, mixamount))
-                // assert_eq!(hash, "31bbe87933d53b1baaf3d13c02d45482af069d82ff92deee935aabc5f1a691f8")
 
+                // "31bbe87933d53b1baaf3d13c02d45482af069d82ff92deee935aabc5f1a691f8"
+                // 30769590742866
+                // ("0x0ab0e6bcd8d1b73f75b88eb946e075bae2a202acec52217103bdfd498e6c7b3a",[30769590742866,30769590742866],1 )
+                // let input:(&str, [u64; 2], u128) = ("0x0ab0e6bcd8d1b73f75b88eb946e075bae2a202acec52217103bdfd498e6c7b3a",[*data,*data],1 );
+                
+                // let inputs= format!("{:?}", input);
+                // let input_bytes = inputs.as_bytes();
+                // hasher.update(input_bytes);
+                // // hasher.update(data.to_le_bytes());
+                // let result = hasher.finalize();
+                // // hex!(result);
+                // // let hash = format!("{:x}", result);
+                // result
+                            // assert_eq!(hash, "31bbe87933d53b1baaf3d13c02d45482af069d82ff92deee935aabc5f1a691f8")
+                let mut hasher = Sha256::new();
+                let input:(&str, [u64; 2], u128) = ("0x0ab0e6bcd8d1b73f75b88eb946e075bae2a202acec52217103bdfd498e6c7b3a",[30769590742866,30769590742866],1 );
+                let inputs= format!("{:?}", input);
+                let input_bytes = inputs.as_bytes();
+                hasher.update(input_bytes);
+                // hasher.update(data.to_le_bytes());
+                let result = hasher.finalize();
+                // hex!(result);
+                let hash = format!("{:x}", result);
+                assert_eq!(hash, "31bbe87933d53b1baaf3d13c02d45482af069d82ff92deee935aabc5f1a691f8")     
+                
                 // Record actual bet amount
 
                 // Refund mix amount
 
                 // Send inviter shares
-
+     
             }
         },
         // Action::GameStop { code: _, url: _ } => todo!(),
