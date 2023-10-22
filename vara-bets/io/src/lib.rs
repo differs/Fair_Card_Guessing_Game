@@ -6,32 +6,35 @@ use gstd::{collections::*, MessageId};
 use gstd::{prelude::*, ActorId};
 use scale_info::TypeInfo;
 use gmeta::{InOut, Metadata};
-
-
 use data_encoding::BASE64;
 
 
 #[derive(Clone, Default, Encode, Decode, TypeInfo)]
-pub struct CardPlay (
-    pub BTreeMap<u64, ActorId>,
+pub struct VaraBetsStates (
+    // use to ...
+    pub BTreeMap<u64, ActorId>, 
+    // 
     pub BTreeMap<u64, gstd::String>,
-    pub BTreeMap<u64, String>, // Object.entries {234: "0xdeadbeef..."} => [[234, "0xdeadbeef..."]] Vec<(u64, [u8; 32])>
+    // 
+    pub BTreeMap<u64, String>, 
+    // 
     pub BTreeMap<u64, (u64, ActorId, u128, u128, String)>,
-
     // Cards Insert
     pub BTreeMap<u64, (u64, ActorId, String)>
 );
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Encode, Decode, TypeInfo)]
 
-pub enum GameState {
+pub enum BetsRoundState {
     #[default]
+
+    GameStarted,
     DealerProofSubmission,
     PlayerBetting,
     PlayerDecryption,
     DealerDecryption,
     RewardDistribution,
-    GameEnd,
+    GameEnded,
 }
 
 #[derive(Debug, Clone, Encode, Decode, TypeInfo,PartialEq)]
@@ -43,11 +46,11 @@ pub enum UserBettingData {
     EncryptedBetData,
 }
 
-#[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq, Copy)]
+// #[derive(Debug, Clone, Encode, Decode, TypeInfo, PartialEq, Copy)]
 
-pub struct GameStateStruct(pub GameState);
+// pub struct GameStateStruct(pub BetsRoundsState);
 
-impl CardPlay {
+impl VaraBetsStates {
 
     pub fn init_contract_owner(&mut self, actor_id:ActorId) -> bool {
 
@@ -153,29 +156,15 @@ impl CardPlay {
     }
 
     pub fn refund(&mut self, _base64_encoded_nonce: String, _base64_encoded_betting_data: String, _id: ActorId, _round: u64) {
-        // 实现 refund 函数逻辑
         // let actorId: ActorId = msg::source();
         let base64_encoded_nonce = _base64_encoded_nonce;
         // let d = UTF_8.new_decoder_without_bom_handling();
         // let res = d.decode_to_utf8(base64_encoded_nonce, dst, last);
-        let nonce = BASE64.decode(base64_encoded_nonce.as_bytes()).expect("decode the nonce error.");
+        let _nonce = BASE64.decode(base64_encoded_nonce.as_bytes()).expect("decode the nonce error.");
         // let nonce = Encoding::decode_mut(&self, base64_encoded_nonce, None);
         let base64_encoded_betting_data = _base64_encoded_betting_data;
-        let betting_data = BASE64.decode(base64_encoded_betting_data.as_bytes()).expect("decode the betting data error");
+        let _betting_data = BASE64.decode(base64_encoded_betting_data.as_bytes()).expect("decode the betting data error");
 
-        // let key = Aes256GcmSiv::generate_key(&mut OsRng);
-        // let cipher = Aes256GcmSiv::new(&key);
-        // let nonce = Nonce::from_slice(&nonce); // 96-bits; unique per message
-        // let ciphertext = cipher.encrypt(nonce, b"plaintext message".as_ref()).expect("msg");
-
-        // // [6666, 8888] : [read_bet_amount, mix_amount].
-        // let origin_betting_data = cipher.decrypt(nonce, betting_data.as_ref()).expect("msg");
-        // let read_bet_amount = origin_betting_data[0];
-        // let mix_amount = origin_betting_data[1];
-
-
-
-        // betting_data  [1000, 9999] 
     }
 
     pub fn insert_cards(&mut self, round: u64, actor_id: ActorId, encoded_cards_array: String) {
@@ -242,7 +231,7 @@ pub enum Query {
     Rounds(),
     Last(),
     Title(),
-    GameState(),
+    BetsRoundState(),
     HashInserted(),
     Beted(),
     AllBets(),
@@ -257,11 +246,11 @@ pub enum Query {
 
 #[derive(Encode, Decode, TypeInfo)]
 pub enum Reply {
-    All(CardPlay),
+    All(VaraBetsStates),
     Rounds(u64),
     Last(u64, String),
     Title(String),
-    GameState(gstd::Option<GameState>),
+    BetsRoundState(gstd::Option<BetsRoundState>),
     HashInserted(u64, String),
     Beted (u64, ActorId, u128, u128, String),
     AllBets(BTreeMap<u64, (u64, ActorId, u128, u128, String)>),

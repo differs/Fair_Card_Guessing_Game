@@ -26,5 +26,4 @@ parity-scale-codec = { version = "3", default-features = false }
 scale-info = { version = "2", default-features = false }
 tokio = { version = "1.33.0", features = ["rt-multi-thread"] }
 sha2 = {version = "0.10.8", default-features = false}
-card-io = { path = "vara-bets/io"}
-
+vara-bets-io = { path = "vara-bets/io"}

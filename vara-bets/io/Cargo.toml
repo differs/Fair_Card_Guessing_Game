@@ -1,5 +1,5 @@
 [package]
-name = "card-io"
+name = "vara-bets-io"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

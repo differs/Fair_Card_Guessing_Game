@@ -1,5 +1,5 @@
 [package]
-name = "card-play"
+name = "vara-bets"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,7 +9,7 @@ authors.workspace = true
 gstd = { workspace = true, features = ["debug"] }
 parity-scale-codec.workspace = true
 scale-info.workspace = true
-card-io.workspace = true
+vara-bets-io.workspace = true
 data-encoding = {version = "2.4.0", default-features = false, features = ["alloc"]}
 sha2.workspace = true
 
@@ -18,7 +18,10 @@ sha2.workspace = true
 [build-dependencies]
 gmeta.workspace = true
 gear-wasm-builder.workspace = true
-card-io.workspace = true
+vara-bets-io.workspace = true
 
 [dev-dependencies]
 gtest.workspace = true
+
+[package.metadata]
+wasm-opt = false

@@ -1,13 +1,13 @@
 #![no_std]
-use gstd::{debug, exec, msg, prelude::*, ActorId};
-use card_io::{CardPlay,Action,Event,Query,Reply, GameState};
-use sha2::{Sha256, Sha512, Digest, digest::{generic_array::GenericArray, typenum::{UInt, UTerm, bit::{B1, B0}}}};
+use gstd::{exec, msg, prelude::*, ActorId};
+use vara_bets_io::{VaraBetsStates,Action,Event,Query,Reply, BetsRoundState};
+use sha2::{Sha256, Digest};
 use data_encoding::BASE64;
 
 
 
-static mut STATE: Option<CardPlay> = None;
-static mut GAME_STATE: Option<GameState> = None;
+static mut VARABETSSTATES: Option<VaraBetsStates> = None;
+static mut BETSROUNDSTATE: Option<BetsRoundState> = None;
 // static ARR_0: [u8; 32] = [0; 32];
 // let mut CONTRACT_OWNER: ActorId = None;
 // static CONTRACT_OWNER: Lazy<ActorId> = Lazy::new(|| {
@@ -19,13 +19,10 @@ static mut GAME_STATE: Option<GameState> = None;
 
 #[no_mangle]
 extern "C" fn init() {
-    // TODO: 0️⃣ Copy the `init` function from the previous lesson and push changes to the master branch
-    // unsafe { STATE = Some(car::default()) };
 
-    unsafe { STATE = Some(CardPlay::default());
-            GAME_STATE = gstd::Some(GameState::GameEnd);
-            assert_eq!(GameState::GameEnd, GAME_STATE.unwrap());           
-            
+    unsafe { VARABETSSTATES = Some(VaraBetsStates::default());
+            BETSROUNDSTATE = gstd::Some(BetsRoundState::GameEnded);
+            assert_eq!(BetsRoundState::GameEnded, BETSROUNDSTATE.unwrap());
      };
 
 
@@ -35,31 +32,27 @@ extern "C" fn init() {
 #[no_mangle]
 extern "C" fn handle() {
 
-    let state = unsafe { STATE.as_mut().expect("failed to get state as mut") };
+    let state = unsafe { VARABETSSTATES.as_mut().expect("failed to get state as mut") };
     let action: Action = gstd::msg::load().expect("failed to load action");
     match action {
-        // Action::Bet { code, url } => {
-        //     state.add_url(code.clone(), url.clone());
-        //     gstd::msg::reply(Event::Added { code, url }, 0).expect("failed to reply");
-        // }
         Action::GameStart { title } => {
-            if unsafe { GAME_STATE } == Some(GameState::GameEnd){
+            if unsafe { BETSROUNDSTATE } == Some(BetsRoundState::GameEnded){
                 state.game_start(title.clone());
                 let rounds = state.current_rounds();
 
-                unsafe { GAME_STATE = Some(GameState::DealerProofSubmission) };
+                unsafe { BETSROUNDSTATE = Some(BetsRoundState::DealerProofSubmission) };
                 gstd::msg::reply(Event::GameStarted { rounds, title },0).expect("Got error");
             }
         }
 
         Action::InsertHash { base64_encoded_cards_hash } => {
-            if unsafe { GAME_STATE } == Some(GameState::DealerProofSubmission) {
+            if unsafe { BETSROUNDSTATE } == Some(BetsRoundState::DealerProofSubmission) {
                 let rounds = state.current_rounds();
                 state.current_round_hash(rounds, base64_encoded_cards_hash.clone());
     
                 unsafe { 
-                    GAME_STATE = Some(GameState::PlayerBetting);
-                    // debug!("GAME_STATE: {:?}", GAME_STATE);                     
+                    BETSROUNDSTATE = Some(BetsRoundState::PlayerBetting);
+                    // debug!("BETSROUNDSTATE: {:?}", BETSROUNDSTATE);                     
                 };
 
                 gstd::msg::reply(Event::InsertedHash { rounds, base64_encoded_cards_hash }, 0).expect("Instert Hash error");
@@ -73,26 +66,26 @@ extern "C" fn handle() {
 
         Action::Bet { encrypted_bet_data } => {
             if unsafe { 
-                GAME_STATE == Some(GameState::PlayerBetting)
+                BETSROUNDSTATE == Some(BetsRoundState::PlayerBetting)
 
-                // debug!("GAME_STATE: {:?}", GAME_STATE);                     
+                // debug!("BETSROUNDSTATE: {:?}", BETSROUNDSTATE);                     
                 }
                 {
                     // betting data of ActorId
                     let total_bet_amount = msg::value();
-                    let actorId = msg::source();
+                    let actor_id = msg::source();
                     let current_round = state.current_rounds();
                     let _user_bet_amount = total_bet_amount.clone();
                     let base64_encoded_encrypted_betting_data = encrypted_bet_data.clone();
                     // state.current_round_hash(rounds, base64_encoded_cards_hash.clone());
 
-                    state.bet(current_round, actorId, total_bet_amount,base64_encoded_encrypted_betting_data);
+                    state.bet(current_round, actor_id, total_bet_amount,base64_encoded_encrypted_betting_data);
                     // gstd::msg::reply("Betting success", 0).expect("Betting Error");
                     gstd::msg::reply(Event::Bet { total_bet_amount, encrypted_bet_data }, 0).expect("Betting Action Error");
 
                     if state.3.len() >= 5 {
 
-                        unsafe { GAME_STATE = Some(GameState::DealerDecryption) }
+                        unsafe { BETSROUNDSTATE = Some(BetsRoundState::DealerDecryption) }
                         
                     }
                 }
@@ -100,7 +93,7 @@ extern "C" fn handle() {
 
         Action::InsertCards { encoded_cards_sequence  } => {
             if unsafe {
-                GAME_STATE == Some(GameState::DealerDecryption)
+                BETSROUNDSTATE == Some(BetsRoundState::DealerDecryption)
 
             }{
                 // state.current_round_Cards_array(rounds, card_vec.clone());
@@ -118,14 +111,14 @@ extern "C" fn handle() {
                 }
 
                 // 
-                unsafe { GAME_STATE = Some(GameState::RewardDistribution) }
+                unsafe { BETSROUNDSTATE = Some(BetsRoundState::RewardDistribution) }
             }
         },
 
         Action::DistributeRewards { base64_encoded_cards_array } => {
 
-            // assert_eq!(GameState, Some(GameState::RewardDistribution));
-            if unsafe { GAME_STATE } == Some(GameState::RewardDistribution) {
+            // assert_eq!(BetsRoundState, Some(BetsRoundState::RewardDistribution));
+            if unsafe { BETSROUNDSTATE } == Some(BetsRoundState::RewardDistribution) {
 
 
                 let actor_id = msg::source();
@@ -183,22 +176,22 @@ extern "C" fn handle() {
                 let _ = gstd::msg::send(owner, "Banker's margin", owner_shares);
                 let _ = gstd::msg::send(winner_actor_id, "You are the LUCKest one ", winner_shares);  
 
-                unsafe { GAME_STATE = Some(GameState::GameEnd) }
+                unsafe { BETSROUNDSTATE = Some(BetsRoundState::GameEnded) }
             }
         }
 
         Action::Refund { base64_encoded_nonce: _ } => {
             if unsafe {
-                GAME_STATE == Some(GameState::DealerDecryption)
-                // GAME_STATE == Some(GameState::PlayerDecryption)
+                BETSROUNDSTATE == Some(BetsRoundState::DealerDecryption)
+                // BETSROUNDSTATE == Some(BetsRoundState::PlayerDecryption)
 
-                // debug!("GAME_STATE: {:?}", GAME_STATE);
+                // debug!("BETSROUNDSTATE: {:?}", BETSROUNDSTATE);
 
             }{
                 gstd::msg::reply("Refund Success", 0).expect("Betting Error");
 
                 // let a = state.inquire_current_card_hash().1;
-                // let b = GameStateStruct(GameState::PlayerDecryption);
+                // let b = BetsRoundStateStruct(BetsRoundState::PlayerDecryption);
 
                 // "31bbe87933d53b1baaf3d13c02d45482af069d82ff92deee935aabc5f1a691f8"
                 // 30769590742866
@@ -233,19 +226,14 @@ extern "C" fn handle() {
      
             }
         },
-        // Action::GameStop { code: _, url: _ } => todo!(),
 
-        Action::WithDraw {} => {
-            
+        Action::WithDraw {} => {            
             let balance: u128 = exec::value_available();
             let admin: ActorId = ActorId::from_bs58("kGfn1RrSZJkTrNbNjpQbvWNE5Szsr3tsTFtmYExrBHFCPLjPy".to_owned()).expect("Get Admin Address Error.");
             assert_eq!(admin, msg::source());
 
             let _ = gstd::msg::send(msg::source(), "Withdraw Balance.", balance);
         },
-        // Action::GameStop { code, url } => todo!(),
-
-        // Action::GameState => todo!(),
     }
 
 
@@ -254,11 +242,10 @@ extern "C" fn handle() {
 
 
 #[no_mangle]
-// static mut ROUND: Option<FairGuessGame> = None;
 
 extern "C" fn state() {
     let query = gstd::msg::load().expect("failed to load query");
-    let mut state: CardPlay = unsafe { STATE.as_ref().expect("failed to get contract state").clone() };
+    let mut state: VaraBetsStates = unsafe { VARABETSSTATES.as_ref().expect("failed to get contract state").clone() };
 
     // let mut GA
     let reply = match query {
@@ -270,9 +257,8 @@ extern "C" fn state() {
         Query::ProgramId => Reply::ProgramId(gstd::exec::program_id()),
         Query::MessageId => Reply::MessageId(gstd::msg::id()),
         Query::Title() => Reply::Title(state.last_round().1),
-        // Query::Last => todo!(),
         Query::Last() => Reply::Last(state.last_round().0, state.last_round().1),
-        Query::GameState() => Reply::GameState(unsafe { GAME_STATE.clone() }),
+        Query::BetsRoundState() => Reply::BetsRoundState(unsafe { BETSROUNDSTATE.clone() }),
         Query::HashInserted() => Reply::HashInserted(state.inquire_current_card_hash().0, state.inquire_current_card_hash().1),
         Query::Beted() => todo!(),
         Query::CardsInserted() => Reply::CardsInserted(state.4.last_key_value().expect("msg").1.2.clone()),
