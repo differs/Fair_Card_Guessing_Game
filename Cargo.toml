@@ -15,15 +15,16 @@ ft-logic = { git = "https://github.com/gear-foundation/dapps-sharded-fungible-to
 ft-main = { git = "https://github.com/gear-foundation/dapps-sharded-fungible-token.git", tag = "2.1.4" }
 ft-main-io = { git = "https://github.com/gear-foundation/dapps-sharded-fungible-token.git", tag = "2.1.4" }
 ft-storage = { git = "https://github.com/gear-foundation/dapps-sharded-fungible-token.git", tag = "2.1.4" }
-gclient = { git = "https://github.com/gear-tech/gear.git", rev="e9b6d89cf5cbbd86506458754f3e686856d5dded"}
+gclient = { git = "https://github.com/gear-tech/gear.git", version = "1.0.1"}
 gear-core = { git = "https://github.com/gear-tech/gear.git"}
-gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git", rev="e9b6d89cf5cbbd86506458754f3e686856d5dded"}
-gmeta = { git = "https://github.com/gear-tech/gear.git", rev="e9b6d89cf5cbbd86506458754f3e686856d5dded"}
-gsdk = { git = "https://github.com/gear-tech/gear.git", rev="e9b6d89cf5cbbd86506458754f3e686856d5dded"}
-gstd = { git = "https://github.com/gear-tech/gear.git", rev="e9b6d89cf5cbbd86506458754f3e686856d5dded"}
-gtest = { git = "https://github.com/gear-tech/gear.git", rev="e9b6d89cf5cbbd86506458754f3e686856d5dded"}
+gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git", version = "0.1.2"}
+gmeta = { git = "https://github.com/gear-tech/gear.git", version = "1.0.1"}
+gsdk = { git = "https://github.com/gear-tech/gear.git", version = "1.0.1"}
+gstd = { git = "https://github.com/gear-tech/gear.git", version = "1.0.1"}
+gtest = { git = "https://github.com/gear-tech/gear.git", version = "0.1.0"}
 parity-scale-codec = { version = "3", default-features = false }
 scale-info = { version = "2", default-features = false }
 tokio = { version = "1.33.0", features = ["rt-multi-thread"] }
-sha2 = {version = "0.10.8", default-features = false}
-vara-bets-io = { path = "vara-bets/io"}
+sha2 = {version = "0.10.8", default-features = false }
+vara-bets = { path = "vara-bets" }
+vara-bets-io = { path = "io" }

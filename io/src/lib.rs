@@ -10,24 +10,23 @@ use data_encoding::BASE64;
 
 
 #[derive(Clone, Default, Encode, Decode, TypeInfo)]
-pub struct VaraBetsStates (
+pub struct VaraBetsStates {
     // use to ...
-    pub BTreeMap<u64, ActorId>, 
+    pub rounds:BTreeMap<u64, ActorId>, 
     // 
-    pub BTreeMap<u64, gstd::String>,
+    pub cureent_round: BTreeMap<u64, gstd::String>,
     // 
-    pub BTreeMap<u64, String>, 
+    pub cureent_round_hash_submitted: BTreeMap<u64, String>, 
     // 
-    pub BTreeMap<u64, (u64, ActorId, u128, u128, String)>,
+    pub betting_index: BTreeMap<u64, (u64, ActorId, u128, u128, String)>,
     // Cards Insert
-    pub BTreeMap<u64, (u64, ActorId, String)>
-);
+    pub card_seq: BTreeMap<u64, (u64, ActorId, String)>
+}
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Encode, Decode, TypeInfo)]
 
 pub enum BetsRoundState {
     #[default]
-
     GameStarted,
     DealerProofSubmission,
     PlayerBetting,
@@ -54,34 +53,34 @@ impl VaraBetsStates {
 
     pub fn init_contract_owner(&mut self, actor_id:ActorId) -> bool {
 
-        self.0.insert(1, actor_id);
+        self.rounds.insert(1, actor_id);
 
         return true;
     }
 
     pub fn check_contract_owner(&mut self) -> ActorId {
 
-        let actor_id = self.0.get_key_value(&1).expect("Check contract owner error.");
+        let actor_id = self.rounds.get_key_value(&1).expect("Check contract owner error.");
 
         return *actor_id.1;
 
     }
 
     pub fn current_rounds(&mut self) -> u64{
-        if self.1.is_empty() == true {
+        if self.cureent_round.is_empty() == true {
             return 0;
         }
         else {
-            let last:u64 = self.1.len().try_into().unwrap();
+            let last:u64 = self.cureent_round.len().try_into().unwrap();
             return last;
         }
     }
 
     pub fn last_round(&mut self) -> (u64, String){
-        if self.1.is_empty() != true{
+        if self.cureent_round.is_empty() != true{
             // let id: u64 = 1;
             // let notice: gstd::String = String::from("value"); 
-            let last = self.1.last_key_value();
+            let last = self.cureent_round.last_key_value();
             match last {
                 Some((key, value)) => {
                     return (key.clone(), value.clone());
@@ -96,31 +95,31 @@ impl VaraBetsStates {
 
     pub fn game_start(&mut self, title: String) {
         // let round = 
-        let last:u64 = self.1.len().try_into().unwrap();
+        let last:u64 = self.cureent_round.len().try_into().unwrap();
         let next_rounds = last + 1;
-        if self.1.contains_key(&next_rounds) {
+        if self.cureent_round.contains_key(&next_rounds) {
             panic!("failed to add url: code exists");
         } else {
-            self.1.insert(next_rounds, title);
+            self.cureent_round.insert(next_rounds, title);
         }    
 
     }
 
 
     pub fn current_round_hash(&mut self, round: u64, base64_encoded_hash: String) {
-        if self.2.is_empty() == true{
-            self.2.insert(round, base64_encoded_hash.clone());
+        if self.cureent_round_hash_submitted.is_empty() == true{
+            self.cureent_round_hash_submitted.insert(round, base64_encoded_hash.clone());
         }
 
-        if self.2.len() == (self.1.len() - 1){
+        if self.cureent_round_hash_submitted.len() == (self.cureent_round.len() - 1){
 
-            self.2.insert(round, base64_encoded_hash.clone());
+            self.cureent_round_hash_submitted.insert(round, base64_encoded_hash.clone());
 
             // let a = self.1.last_key_value().expect("msg");
             
         } 
 
-        if  self.2.last_key_value() == self.1.last_key_value() {
+        if  self.cureent_round_hash_submitted.last_key_value() == self.cureent_round.last_key_value() {
 
             panic!(" Hash of this round insert duplicate.")
             
@@ -129,7 +128,7 @@ impl VaraBetsStates {
     }
 
     pub fn inquire_current_card_hash(&mut self) -> (u64, String){
-            let last = self.2.last_key_value();
+            let last = self.cureent_round_hash_submitted.last_key_value();
             match last {
                 Some((key, value)) => {
 
@@ -144,13 +143,13 @@ impl VaraBetsStates {
         // self.1.insert(next_rounds, title);
 
 
-        let bet_index:u64 = self.3.len().try_into().unwrap();
+        let bet_index:u64 = self.betting_index.len().try_into().unwrap();
         let user_bet_index = bet_index + 1;
         // let user_bet_amount: u128 = 0;
         let mix_amount = user_bet_amount - 0; // 0 - > x :
         let user_bet_data = (round, id, user_bet_amount, mix_amount, encrypted_bet_data);
         // let use
-        self.3.insert(user_bet_index, user_bet_data);
+        self.betting_index.insert(user_bet_index, user_bet_data);
 
 
     }
@@ -169,15 +168,15 @@ impl VaraBetsStates {
 
     pub fn insert_cards(&mut self, round: u64, actor_id: ActorId, encoded_cards_array: String) {
 
-        let index = self.4.len() + 1;
+        let index = self.card_seq.len() + 1;
 
 
-        self.4.insert(index.try_into().unwrap(),(round, actor_id, encoded_cards_array));
+        self.card_seq.insert(index.try_into().unwrap(),(round, actor_id, encoded_cards_array));
     }
 
     pub fn distribute_rewards(&mut self) -> u64{
         // let mut all_values: Vec<_,_,_,_> = BTreeMap
-        let all_bet_times: u64 = self.3.len().try_into().unwrap();
+        let all_bet_times: u64 = self.betting_index.len().try_into().unwrap();
 
         return all_bet_times;
     }

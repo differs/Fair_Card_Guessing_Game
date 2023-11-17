@@ -13,8 +13,6 @@ vara-bets-io.workspace = true
 data-encoding = {version = "2.4.0", default-features = false, features = ["alloc"]}
 sha2.workspace = true
 
-
-
 [build-dependencies]
 gmeta.workspace = true
 gear-wasm-builder.workspace = true
@@ -24,4 +22,4 @@ vara-bets-io.workspace = true
 gtest.workspace = true
 
 [package.metadata]
-wasm-opt = false
+wasm-opt = true

@@ -11,3 +11,4 @@ gstd.workspace = true
 parity-scale-codec.workspace = true
 scale-info.workspace = true
 data-encoding = {version = "2.4.0", default-features = false, features = ["alloc"]}
+

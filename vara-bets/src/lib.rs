@@ -83,7 +83,7 @@ extern "C" fn handle() {
                     // gstd::msg::reply("Betting success", 0).expect("Betting Error");
                     gstd::msg::reply(Event::Bet { total_bet_amount, encrypted_bet_data }, 0).expect("Betting Action Error");
 
-                    if state.3.len() >= 5 {
+                    if state.betting_index.len() >= 5 {
 
                         unsafe { BETSROUNDSTATE = Some(BetsRoundState::DealerDecryption) }
                         
@@ -156,7 +156,7 @@ extern "C" fn handle() {
 
                 let card_max_index: u64 = max_index.try_into().unwrap();
 
-                let winner_actor_info= state.3.get_key_value(&card_max_index).expect("Got Winner INFO Error");
+                let winner_actor_info= state.betting_index.get_key_value(&card_max_index).expect("Got Winner INFO Error");
 
                 let winner_actor_id: ActorId = winner_actor_info.1.1;
 
@@ -261,9 +261,9 @@ extern "C" fn state() {
         Query::BetsRoundState() => Reply::BetsRoundState(unsafe { BETSROUNDSTATE.clone() }),
         Query::HashInserted() => Reply::HashInserted(state.inquire_current_card_hash().0, state.inquire_current_card_hash().1),
         Query::Beted() => todo!(),
-        Query::CardsInserted() => Reply::CardsInserted(state.4.last_key_value().expect("msg").1.2.clone()),
+        Query::CardsInserted() => Reply::CardsInserted(state.card_seq.last_key_value().expect("msg").1.2.clone()),
         Query::DistributedRewards() => todo!(),
-        Query::AllBets() => Reply::AllBets(state.3),
+        Query::AllBets() => Reply::AllBets(state.betting_index),
     };
     gstd::msg::reply(reply, 0).expect("Failed to share state");
 
